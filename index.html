@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Moderation App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .safe {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .unsafe {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Moderation Checker</h1>
+    <textarea id="textInput" rows="5" cols="50" placeholder="Enter text to check..."></textarea>
+    <br>
+    <button onclick="checkText()">Check Text</button>
+    <div id="result" class="result"></div>
+
+    <script>
+        async function checkText() {
+            const text = document.getElementById('textInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!text) {
+                alert('Please enter some text to check');
+                return;
+            }
+
+            // Replace with your HuggingFace API token
+            const API_TOKEN = 'YOUR_HUGGINGFACE_API_TOKEN';
+            
+            try {
+                const response = await fetch(
+                    "https://api-inference.huggingface.co/models/facebook/roberta-hate-speech-dynabench-r4-target",
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${API_TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        method: "POST",
+                        body: JSON.stringify({ "inputs": text })
+                    }
+                );
+
+                const result = await response.json();
+                
+                // Process the result
+                const label = result[0][0].label;
+                const score = (result[0][0].score * 100).toFixed(2);
+                
+                let message = '';
+                if (label === 'nothate') {
+                    resultDiv.className = 'result safe';
+                    message = `✅ Text appears to be safe (${score}% confidence)`;
+                } else {
+                    resultDiv.className = 'result unsafe';
+                    message = `⚠️ Text may contain inappropriate content (${score}% confidence)`;
+                }
+                
+                resultDiv.textContent = message;
+            } catch (error) {
+                resultDiv.className = 'result';
+                resultDiv.textContent = '❌ Error checking text: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 
